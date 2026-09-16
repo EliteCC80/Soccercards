@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#faf6f0">
+<title>Logan groeit</title>
+<style>
+  :root {
+    --bg: #faf6f0;
+    --card: #ffffff;
+    --ink: #33302c;
+    --ink-soft: #7d766c;
+    --line: #e9e0d4;
+    --accent: #c86f3c;
+    --accent-soft: #f6e7db;
+    --shadow: 0 1px 2px rgba(60, 48, 36, .06), 0 6px 18px rgba(60, 48, 36, .05);
+    --radius: 18px;
+  }
+  [hidden] { display: none !important; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 400 17px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    min-height: 100dvh;
+  }
+  .app {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 24px 20px calc(32px + env(safe-area-inset-bottom));
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+  .screen { display: none; flex: 1; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  h1 { font-size: 26px; font-weight: 600; margin: 0 0 2px; letter-spacing: -.01em; }
+  h2 { font-size: 21px; font-weight: 600; margin: 0 0 18px; letter-spacing: -.01em; }
+  .sub { color: var(--ink-soft); font-size: 15px; margin: 0; }
+
+  .topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; min-height: 34px; }
+  .topbar .grow { flex: 1; }
+
+  .link {
+    background: none; border: 0; padding: 8px 0; margin: 0;
+    color: var(--accent); font: inherit; font-size: 16px; cursor: pointer;
+  }
+  .link.quiet { color: var(--ink-soft); }
+
+  /* invoer */
+  .meta { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
+  .meta-row { display: flex; align-items: center; gap: 10px; }
+  label.small { font-size: 14px; color: var(--ink-soft); }
+  input[type="text"], input[type="date"], textarea {
+    width: 100%;
+    font: inherit;
+    color: var(--ink);
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 12px 14px;
+  }
+  input[type="date"] { -webkit-appearance: none; appearance: none; }
+  input[type="text"]::placeholder, textarea::placeholder { color: #b3aa9d; }
+  input:focus, textarea:focus { outline: 2px solid var(--accent-soft); outline-offset: 1px; border-color: var(--accent); }
+  textarea { min-height: 120px; resize: vertical; line-height: 1.55; }
+  .field { margin-bottom: 20px; }
+  .field .prompt { font-size: 15px; color: var(--ink-soft); margin: 0 0 8px; }
+
+  .ask {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 34px; padding: 24px 0 40px; text-align: center;
+  }
+  .ask .question { font-size: 22px; font-weight: 600; margin: 0; letter-spacing: -.01em; }
+  .moods { display: flex; gap: 18px; justify-content: center; }
+  .mood {
+    width: 92px; height: 92px; border-radius: 50%;
+    border: 1px solid var(--line); background: var(--card);
+    box-shadow: var(--shadow);
+    font-size: 42px; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .mood:active { transform: scale(.93); }
+  .mood.selected { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .mood-labels { display: flex; gap: 18px; justify-content: center; margin-top: -22px; }
+  .mood-labels span { width: 92px; font-size: 13px; color: var(--ink-soft); }
+
+  .btn {
+    display: block; width: 100%;
+    font: inherit; font-size: 17px; font-weight: 500;
+    padding: 16px; border-radius: 16px; border: 1px solid transparent;
+    cursor: pointer;
+  }
+  .btn.primary { background: var(--accent); color: #fff; }
+  .btn.ghost { background: var(--card); color: var(--ink); border-color: var(--line); }
+  .btn.danger { background: none; color: #b04a3a; border-color: transparent; }
+  .btn:active { opacity: .85; }
+  .btn-row { display: flex; gap: 12px; margin-top: auto; padding-top: 24px; }
+  .btn-row .btn { margin: 0; }
+
+  .chosen { text-align: center; margin-bottom: 26px; }
+  .chosen .emoji { font-size: 56px; line-height: 1; }
+  .chosen .caption { color: var(--ink-soft); font-size: 15px; margin-top: 8px; }
+
+  /* overzicht */
+  .list { list-style: none; margin: 0 0 24px; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .item {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 14px 16px; cursor: pointer; text-align: left; width: 100%;
+    font: inherit; color: inherit;
+  }
+  .item:active { background: #fdfaf6; }
+  .item-top { display: flex; align-items: baseline; gap: 12px; }
+  .item-title { flex: 1; font-size: 16px; }
+  .item-title .opp { color: var(--ink-soft); }
+  .item-emoji { font-size: 26px; line-height: 1; }
+  .item-note { color: var(--ink-soft); font-size: 14px; margin-top: 6px; white-space: pre-wrap; }
+
+  .empty {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; gap: 20px; padding: 40px 0;
+  }
+  .empty .emoji { font-size: 44px; }
+  .empty p { margin: 0; color: var(--ink-soft); }
+  .empty .btn { max-width: 280px; }
+
+  .spacer { flex: 1; }
+  .sticky-add { position: sticky; bottom: 0; padding-top: 12px;
+    background: linear-gradient(to bottom, rgba(250,246,240,0), var(--bg) 40%); }
+
+  /* detail */
+  .detail-head { text-align: center; margin-bottom: 24px; }
+  .detail-head .emoji { font-size: 44px; line-height: 1; }
+  .detail-head .when { margin-top: 6px; font-size: 15px; color: var(--ink-soft); }
+  .moods.small .mood { width: 62px; height: 62px; font-size: 28px; }
+  .moods.small { gap: 12px; }
+  details.more {
+    border-top: 1px solid var(--line); margin-top: 8px; padding-top: 14px;
+  }
+  details.more > summary {
+    list-style: none; cursor: pointer; color: var(--accent); font-size: 16px; padding: 6px 0;
+  }
+  details.more > summary::-webkit-details-marker { display: none; }
+  details.more > summary::after { content: " ›"; }
+  details.more[open] > summary::after { content: " ⌄"; }
+  details.more .intro { color: var(--ink-soft); font-size: 14px; margin: 10px 0 18px; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(12px);
+    background: var(--ink); color: #fff; font-size: 15px; padding: 10px 18px; border-radius: 999px;
+    opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease;
+  }
+  .toast.show { opacity: .95; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- scherm 1: invoer -->
+  <section class="screen" id="screen-entry">
+    <div class="topbar">
+      <button class="link quiet" id="entry-back" type="button">← overzicht</button>
+      <span class="grow"></span>
+    </div>
+    <div class="meta">
+      <div class="meta-row">
+        <label class="small" for="entry-date">datum</label>
+        <input type="date" id="entry-date">
+      </div>
+      <input type="text" id="entry-opponent" placeholder="tegenstander (optioneel)" autocomplete="off">
+    </div>
+    <div class="ask">
+      <p class="question">had hij een leuke wedstrijd?</p>
+      <div>
+        <div class="moods" id="entry-moods"></div>
+        <div class="mood-labels">
+          <span>leuk</span><span>gaat wel</span><span>niet leuk</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- scherm 2: notitie -->
+  <section class="screen" id="screen-note">
+    <div class="topbar"><span class="grow"></span></div>
+    <div class="chosen">
+      <div class="emoji" id="note-emoji"></div>
+      <div class="caption" id="note-caption"></div>
+    </div>
+    <div class="field">
+      <p class="prompt">nog iets bijzonders?</p>
+      <textarea id="note-text" placeholder="een doelpunt, een grapje, iets wat je bijbleef…"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn ghost" id="note-skip" type="button">overslaan</button>
+      <button class="btn primary" id="note-done" type="button">klaar</button>
+    </div>
+  </section>
+
+  <!-- scherm 3: overzicht -->
+  <section class="screen" id="screen-list">
+    <div class="topbar">
+      <div>
+        <h1>Logan groeit</h1>
+        <p class="sub" id="list-sub"></p>
+      </div>
+    </div>
+    <ul class="list" id="list-items"></ul>
+    <div class="empty" id="list-empty" hidden>
+      <div class="emoji">⚽️</div>
+      <p>nog geen wedstrijden gelogd</p>
+      <button class="btn primary" id="empty-add" type="button">eerste wedstrijd toevoegen</button>
+    </div>
+    <div class="spacer"></div>
+    <div class="sticky-add" id="list-add-wrap">
+      <button class="btn primary" id="list-add" type="button">nieuwe wedstrijd toevoegen</button>
+    </div>
+  </section>
+
+  <!-- scherm 4: detail -->
+  <section class="screen" id="screen-detail">
+    <div class="topbar">
+      <button class="link quiet" id="detail-back" type="button">← overzicht</button>
+      <span class="grow"></span>
+    </div>
+    <div class="detail-head">
+      <div class="emoji" id="detail-emoji"></div>
+      <div class="when" id="detail-when"></div>
+    </div>
+
+    <div class="field">
+      <p class="prompt">hoe was het?</p>
+      <div class="moods small" id="detail-moods"></div>
+    </div>
+
+    <div class="field">
+      <label class="small" for="detail-opponent">tegenstander</label>
+      <input type="text" id="detail-opponent" placeholder="optioneel" autocomplete="off">
+    </div>
+
+    <div class="field">
+      <p class="prompt">nog iets bijzonders?</p>
+      <textarea id="detail-note" placeholder="niets ingevuld"></textarea>
+    </div>
+
+    <details class="more" id="detail-more">
+      <summary>uitgebreide observatie</summary>
+      <p class="intro">helemaal optioneel — vrije tekst, geen scores.</p>
+      <div class="field">
+        <p class="prompt">wat viel je op aan hoe hij met de bal omging vandaag?</p>
+        <textarea id="obs-ball"></textarea>
+      </div>
+      <div class="field">
+        <p class="prompt">bleef hij er de hele wedstrijd bij, of raakte hij afgeleid?</p>
+        <textarea id="obs-focus"></textarea>
+      </div>
+      <div class="field">
+        <p class="prompt">hoe was zijn lichaamstaal — lachen, juichen, of erbij hangen?</p>
+        <textarea id="obs-body"></textarea>
+      </div>
+    </details>
+
+    <div class="btn-row">
+      <button class="btn danger" id="detail-delete" type="button">verwijderen</button>
+      <button class="btn primary" id="detail-save" type="button">opslaan</button>
+    </div>
+  </section>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var STORE = 'logangroeit.matches.v1';
+  var MOODS = [
+    { score: 2, emoji: '😄', label: 'leuk' },
+    { score: 1, emoji: '😐', label: 'gaat wel' },
+    { score: 0, emoji: '🙁', label: 'niet leuk' }
+  ];
+
+  var $ = function (id) { return document.getElementById(id); };
+  var moodBy = function (score) {
+    for (var i = 0; i < MOODS.length; i++) if (MOODS[i].score === score) return MOODS[i];
+    return MOODS[1];
+  };
+
+  /* ---------- opslag ---------- */
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORE);
+      var data = raw ? JSON.parse(raw) : [];
+      return Array.isArray(data) ? data : [];
+    } catch (e) {
+      return [];
+    }
+  }
+  function save(list) {
+    try {
+      localStorage.setItem(STORE, JSON.stringify(list));
+    } catch (e) {
+      toast('opslaan lukte niet');
+    }
+  }
+  var matches = load();
+
+  function newId() {
+    return 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+  function findIndex(id) {
+    for (var i = 0; i < matches.length; i++) if (matches[i].id === id) return i;
+    return -1;
+  }
+
+  /* ---------- datum ---------- */
+  function todayISO() {
+    var d = new Date();
+    var m = String(d.getMonth() + 1).padStart(2, '0');
+    var day = String(d.getDate()).padStart(2, '0');
+    return d.getFullYear() + '-' + m + '-' + day;
+  }
+  var MONTHS = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+  function prettyDate(iso) {
+    var p = String(iso || '').split('-');
+    if (p.length !== 3) return iso || '';
+    var month = MONTHS[Number(p[1]) - 1] || '';
+    var d = Number(p[2]);
+    if (iso === todayISO()) return 'vandaag';
+    return d + ' ' + month + (p[0] === todayISO().slice(0, 4) ? '' : ' ' + p[0]);
+  }
+
+  /* ---------- schermen ---------- */
+  var screens = ['screen-entry', 'screen-note', 'screen-list', 'screen-detail'];
+  function show(id) {
+    screens.forEach(function (s) { $(s).classList.toggle('active', s === id); });
+    window.scrollTo(0, 0);
+  }
+
+  var toastTimer;
+  function toast(msg) {
+    var t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove('show'); }, 1600);
+  }
+
+  /* ---------- knoppen bouwen ---------- */
+  function buildMoods(container, onPick) {
+    MOODS.forEach(function (m) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'mood';
+      b.textContent = m.emoji;
+      b.dataset.score = m.score;
+      b.setAttribute('aria-label', m.label);
+      b.addEventListener('click', function () { onPick(m.score); });
+      container.appendChild(b);
+    });
+  }
+  function markSelected(container, score) {
+    Array.prototype.forEach.call(container.children, function (b) {
+      b.classList.toggle('selected', Number(b.dataset.score) === score);
+    });
+  }
+
+  /* ---------- scherm 1: invoer ---------- */
+  var draftId = null;
+
+  function openEntry() {
+    $('entry-date').value = todayISO();
+    $('entry-opponent').value = '';
+    markSelected($('entry-moods'), -1);
+    $('entry-back').hidden = matches.length === 0;
+    draftId = null;
+    show('screen-entry');
+  }
+
+  buildMoods($('entry-moods'), function (score) {
+    var match = {
+      id: newId(),
+      date: $('entry-date').value || todayISO(),
+      opponent: $('entry-opponent').value.trim(),
+      score: score,
+      note: '',
+      obs: { ball: '', focus: '', body: '' },
+      created: Date.now()
+    };
+    matches.push(match);
+    save(matches);
+    draftId = match.id;
+    openNote(match);
+  });
+
+  $('entry-back').addEventListener('click', openList);
+
+  /* ---------- scherm 2: notitie ---------- */
+  function openNote(match) {
+    var m = moodBy(match.score);
+    $('note-emoji').textContent = m.emoji;
+    $('note-caption').textContent = prettyDate(match.date) + (match.opponent ? ' · ' + match.opponent : '') + ' — opgeslagen';
+    $('note-text').value = match.note || '';
+    show('screen-note');
+  }
+
+  function finishNote(withText) {
+    var i = findIndex(draftId);
+    if (i >= 0) {
+      matches[i].note = withText ? $('note-text').value.trim() : '';
+      save(matches);
+    }
+    draftId = null;
+    openList();
+    toast('bewaard');
+  }
+  $('note-skip').addEventListener('click', function () { finishNote(false); });
+  $('note-done').addEventListener('click', function () { finishNote(true); });
+
+  /* ---------- scherm 3: overzicht ---------- */
+  function sorted() {
+    return matches.slice().sort(function (a, b) {
+      if (a.date === b.date) return (b.created || 0) - (a.created || 0);
+      return a.date < b.date ? 1 : -1;
+    });
+  }
+
+  function openList() {
+    var items = sorted();
+    var ul = $('list-items');
+    ul.textContent = '';
+
+    var empty = items.length === 0;
+    $('list-empty').hidden = !empty;
+    $('list-add-wrap').hidden = empty;
+    $('list-sub').textContent = empty ? '' :
+      items.length + (items.length === 1 ? ' wedstrijd' : ' wedstrijden');
+
+    items.forEach(function (match) {
+      var li = document.createElement('li');
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'item';
+
+      var top = document.createElement('div');
+      top.className = 'item-top';
+
+      var title = document.createElement('div');
+      title.className = 'item-title';
+      title.textContent = prettyDate(match.date);
+      if (match.opponent) {
+        var opp = document.createElement('span');
+        opp.className = 'opp';
+        opp.textContent = ' · ' + match.opponent;
+        title.appendChild(opp);
+      }
+
+      var em = document.createElement('div');
+      em.className = 'item-emoji';
+      em.textContent = moodBy(match.score).emoji;
+
+      top.appendChild(title);
+      top.appendChild(em);
+      btn.appendChild(top);
+
+      if (match.note) {
+        var n = document.createElement('div');
+        n.className = 'item-note';
+        n.textContent = match.note;
+        btn.appendChild(n);
+      }
+
+      btn.addEventListener('click', function () { openDetail(match.id); });
+      li.appendChild(btn);
+      ul.appendChild(li);
+    });
+
+    show('screen-list');
+  }
+
+  $('list-add').addEventListener('click', openEntry);
+  $('empty-add').addEventListener('click', openEntry);
+
+  /* ---------- scherm 4: detail ---------- */
+  var detailId = null;
+  var detailScore = 1;
+
+  buildMoods($('detail-moods'), function (score) {
+    detailScore = score;
+    markSelected($('detail-moods'), score);
+    $('detail-emoji').textContent = moodBy(score).emoji;
+  });
+
+  function openDetail(id) {
+    var i = findIndex(id);
+    if (i < 0) return openList();
+    var match = matches[i];
+    detailId = id;
+    detailScore = match.score;
+
+    $('detail-emoji').textContent = moodBy(match.score).emoji;
+    $('detail-when').textContent = prettyDate(match.date);
+    markSelected($('detail-moods'), match.score);
+    $('detail-opponent').value = match.opponent || '';
+    $('detail-note').value = match.note || '';
+    var obs = match.obs || {};
+    $('obs-ball').value = obs.ball || '';
+    $('obs-focus').value = obs.focus || '';
+    $('obs-body').value = obs.body || '';
+    $('detail-more').open = !!(obs.ball || obs.focus || obs.body);
+
+    show('screen-detail');
+  }
+
+  $('detail-save').addEventListener('click', function () {
+    var i = findIndex(detailId);
+    if (i >= 0) {
+      matches[i].score = detailScore;
+      matches[i].opponent = $('detail-opponent').value.trim();
+      matches[i].note = $('detail-note').value.trim();
+      matches[i].obs = {
+        ball: $('obs-ball').value.trim(),
+        focus: $('obs-focus').value.trim(),
+        body: $('obs-body').value.trim()
+      };
+      save(matches);
+    }
+    openList();
+    toast('bewaard');
+  });
+
+  $('detail-delete').addEventListener('click', function () {
+    if (!window.confirm('deze wedstrijd verwijderen?')) return;
+    var i = findIndex(detailId);
+    if (i >= 0) {
+      matches.splice(i, 1);
+      save(matches);
+    }
+    openList();
+    toast('verwijderd');
+  });
+
+  $('detail-back').addEventListener('click', openList);
+
+  /* ---------- start ---------- */
+  openList();
+})();
+</script>
+</body>
+</html>
