@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+build/
+coverage/
+*.log
+
+# lokale database + secrets
+.env
+.env.local
+*.db
+*.db-journal
+prisma/*.db
+prisma/*.db-journal
+
+.DS_Store
