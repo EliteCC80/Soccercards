@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cardDataFromForm } from "../cards";
+import { CardError, cardDataFromForm, listCards } from "../cards";
 
 function form(fields: Record<string, string>): FormData {
   const data = new FormData();
@@ -35,5 +35,17 @@ describe("cardDataFromForm", () => {
   it("weigert een onbekende status of conditie", () => {
     expect(() => cardDataFromForm(form({ ...base, status: "VERKOCHT" }))).toThrow(/status/);
     expect(() => cardDataFromForm(form({ ...base, condition: "PERFECT" }))).toThrow(/conditie/);
+  });
+});
+
+describe("cardDataFromForm foutsoorten", () => {
+  it("geeft een CardError zodat de melding aan de gebruiker getoond mag worden", () => {
+    expect(() => cardDataFromForm(form({ ...base, askingPrice: "12,505" }))).toThrow(CardError);
+  });
+});
+
+describe("listCards", () => {
+  it("wijst een onbekende status af in plaats van alles te tonen", async () => {
+    await expect(listCards({ status: "Verkocht" })).rejects.toBeInstanceOf(CardError);
   });
 });

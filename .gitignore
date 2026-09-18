@@ -14,3 +14,6 @@ prisma/*.db
 prisma/*.db-journal
 
 .DS_Store
+
+# TypeScript build cache
+*.tsbuildinfo

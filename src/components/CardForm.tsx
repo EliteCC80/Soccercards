@@ -1,5 +1,9 @@
+"use client";
+
 import type { Card } from "@prisma/client";
 import Link from "next/link";
+import { useActionState } from "react";
+import type { FormState } from "@/app/cards/actions";
 import {
   CONDITIONS,
   CONDITION_LABELS,
@@ -16,42 +20,57 @@ export function CardForm({
   card,
   action,
   submitLabel,
-  error,
 }: {
   card?: Card;
-  action: (formData: FormData) => void | Promise<void>;
+  action: (state: FormState, formData: FormData) => Promise<FormState>;
   submitLabel: string;
-  error?: string;
 }) {
+  const [state, formAction, pending] = useActionState<FormState, FormData>(action, {});
+
+  // Na een fout komen de ingetypte waarden terug; die winnen van de opgeslagen
+  // kaart, zodat niemand tien velden opnieuw hoeft in te vullen.
+  const typed = state.values;
+  const value = (key: string, stored: string | null | undefined) =>
+    typed?.[key] ?? stored ?? "";
+  const checked = typed ? typed.isRookie !== undefined : (card?.isRookie ?? false);
+
   return (
-    <form action={action} className="space-y-6">
-      {error ? (
-        <p className="rounded-md bg-rose-100 px-3 py-2 text-sm text-rose-900">{error}</p>
+    <form
+      action={formAction}
+      // Remount na een mislukte poging, anders negeert React de nieuwe
+      // defaultValue van de ongecontroleerde velden.
+      key={typed ? JSON.stringify(typed) : "initial"}
+      className="space-y-6"
+    >
+      {state.error ? (
+        <p className="rounded-md bg-rose-100 px-3 py-2 text-sm text-rose-900" role="alert">
+          {state.error}
+        </p>
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div>
           <label className={label} htmlFor="player">Speler *</label>
-          <input id="player" name="player" required defaultValue={card?.player} className={field} />
+          <input id="player" name="player" required defaultValue={value("player", card?.player)} className={field} />
         </div>
         <div>
           <label className={label} htmlFor="year">Jaar *</label>
-          <input id="year" name="year" required placeholder="2023-24" defaultValue={card?.year} className={field} />
+          <input id="year" name="year" required placeholder="2023-24" defaultValue={value("year", card?.year)} className={field} />
         </div>
         <div>
           <label className={label} htmlFor="set">Set *</label>
-          <input id="set" name="set" required placeholder="Panini Prizm" defaultValue={card?.set} className={field} />
+          <input id="set" name="set" required placeholder="Panini Prizm" defaultValue={value("set", card?.set)} className={field} />
         </div>
         <div>
           <label className={label} htmlFor="variant">Variant</label>
-          <input id="variant" name="variant" placeholder="Silver" defaultValue={card?.variant ?? ""} className={field} />
+          <input id="variant" name="variant" placeholder="Silver" defaultValue={value("variant", card?.variant)} className={field} />
         </div>
         <div>
           <label className={label} htmlFor="serialNumber">Printnummer</label>
-          <input id="serialNumber" name="serialNumber" placeholder="38/50" defaultValue={card?.serialNumber ?? ""} className={field} />
+          <input id="serialNumber" name="serialNumber" placeholder="38/50" defaultValue={value("serialNumber", card?.serialNumber)} className={field} />
         </div>
         <div className="flex items-end gap-2 pb-2">
-          <input id="isRookie" name="isRookie" type="checkbox" defaultChecked={card?.isRookie} className="size-4" />
+          <input id="isRookie" name="isRookie" type="checkbox" defaultChecked={checked} className="size-4" />
           <label htmlFor="isRookie" className="text-sm font-medium">Rookie card (RC)</label>
         </div>
       </div>
@@ -59,7 +78,7 @@ export function CardForm({
       <div className="grid gap-4 sm:grid-cols-3">
         <div>
           <label className={label} htmlFor="condition">Conditie</label>
-          <select id="condition" name="condition" defaultValue={card?.condition ?? "NM"} className={field}>
+          <select id="condition" name="condition" defaultValue={value("condition", card?.condition) || "NM"} className={field}>
             {CONDITIONS.map((c) => (
               <option key={c} value={c}>{CONDITION_LABELS[c]}</option>
             ))}
@@ -67,7 +86,7 @@ export function CardForm({
         </div>
         <div>
           <label className={label} htmlFor="status">Status</label>
-          <select id="status" name="status" defaultValue={card?.status ?? "DRAFT"} className={field}>
+          <select id="status" name="status" defaultValue={value("status", card?.status) || "DRAFT"} className={field}>
             {STATUSES.map((s) => (
               <option key={s} value={s}>{STATUS_LABELS[s]}</option>
             ))}
@@ -75,33 +94,37 @@ export function CardForm({
         </div>
         <div>
           <label className={label} htmlFor="listingUrl">Listing URL</label>
-          <input id="listingUrl" name="listingUrl" type="url" defaultValue={card?.listingUrl ?? ""} className={field} />
+          <input id="listingUrl" name="listingUrl" type="url" defaultValue={value("listingUrl", card?.listingUrl)} className={field} />
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div>
           <label className={label} htmlFor="priceLow">Prijs laag (€)</label>
-          <input id="priceLow" name="priceLow" inputMode="decimal" defaultValue={centsToInputValue(card?.priceLow)} className={field} />
+          <input id="priceLow" name="priceLow" inputMode="decimal" defaultValue={value("priceLow", centsToInputValue(card?.priceLow))} className={field} />
         </div>
         <div>
           <label className={label} htmlFor="priceHigh">Prijs hoog (€)</label>
-          <input id="priceHigh" name="priceHigh" inputMode="decimal" defaultValue={centsToInputValue(card?.priceHigh)} className={field} />
+          <input id="priceHigh" name="priceHigh" inputMode="decimal" defaultValue={value("priceHigh", centsToInputValue(card?.priceHigh))} className={field} />
         </div>
         <div>
           <label className={label} htmlFor="askingPrice">Vraagprijs (€)</label>
-          <input id="askingPrice" name="askingPrice" inputMode="decimal" defaultValue={centsToInputValue(card?.askingPrice)} className={field} />
+          <input id="askingPrice" name="askingPrice" inputMode="decimal" defaultValue={value("askingPrice", centsToInputValue(card?.askingPrice))} className={field} />
         </div>
       </div>
 
       <div>
         <label className={label} htmlFor="notes">Notities</label>
-        <textarea id="notes" name="notes" rows={3} defaultValue={card?.notes ?? ""} className={field} />
+        <textarea id="notes" name="notes" rows={3} defaultValue={value("notes", card?.notes)} className={field} />
       </div>
 
       <div className="flex items-center gap-3">
-        <button type="submit" className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
-          {submitLabel}
+        <button
+          type="submit"
+          disabled={pending}
+          className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+        >
+          {pending ? "Bezig…" : submitLabel}
         </button>
         <Link href="/" className="text-sm underline underline-offset-4">Annuleren</Link>
       </div>

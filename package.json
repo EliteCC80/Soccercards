@@ -12,9 +12,6 @@
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate"
   },
-  "prisma": {
-    "seed": "node prisma/seed.mjs"
-  },
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "next": "^15.5.25",

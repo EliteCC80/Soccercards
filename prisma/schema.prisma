@@ -30,4 +30,5 @@ model Card {
 
   @@index([status])
   @@index([player])
+  @@index([updatedAt])
 }

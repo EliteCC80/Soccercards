@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { StatusBadge } from "@/components/StatusBadge";
-import { listCards } from "@/lib/cards";
-import { STATUSES, STATUS_LABELS } from "@/lib/constants";
+import { CardError, listCards } from "@/lib/cards";
+import { STATUSES, STATUS_LABELS, isStatus } from "@/lib/constants";
 import { formatEuro } from "@/lib/money";
 
 export const dynamic = "force-dynamic";
@@ -12,10 +12,25 @@ export default async function HomePage({
   searchParams: Promise<{ status?: string; q?: string }>;
 }) {
   const { status = "", q = "" } = await searchParams;
-  const cards = await listCards({ status, query: q });
+
+  // Een onbekende status uit de URL mag niet stilzwijgend "alles" tonen.
+  let warning: string | null = null;
+  let cards;
+  try {
+    cards = await listCards({ status, query: q });
+  } catch (error) {
+    if (!(error instanceof CardError)) throw error;
+    warning = `${error.message} — alle kaarten worden getoond.`;
+    cards = await listCards({ query: q });
+  }
 
   return (
     <div className="space-y-6">
+      {warning ? (
+        <p className="rounded-md bg-amber-100 px-3 py-2 text-sm text-amber-900" role="alert">
+          {warning}
+        </p>
+      ) : null}
       <form className="flex flex-wrap items-end gap-3">
         <div>
           <label className="block text-sm font-medium mb-1" htmlFor="q">Speler</label>
@@ -32,7 +47,7 @@ export default async function HomePage({
           <select
             id="status"
             name="status"
-            defaultValue={status}
+            defaultValue={isStatus(status) ? status : ""}
             className="rounded-md border border-black/15 bg-white px-3 py-2 text-sm text-slate-900 dark:border-white/20 dark:bg-slate-900 dark:text-slate-100"
           >
             <option value="">Alle</option>

@@ -1,14 +1,26 @@
-import type { Card, Prisma } from "@prisma/client";
+import { Prisma, type Card } from "@prisma/client";
 import { prisma } from "./db";
 import { isCondition, isStatus } from "./constants";
 import { parseEuro } from "./money";
 
 export type CardFilter = { status?: string; query?: string };
 
-export function listCards(filter: CardFilter = {}): Promise<Card[]> {
+/** Fout die als nette melding aan de gebruiker getoond mag worden. */
+export class CardError extends Error {}
+
+/**
+ * Een onbekende status wordt afgewezen in plaats van genegeerd: stil alles
+ * teruggeven ziet eruit als een filter dat niet werkt.
+ */
+export async function listCards(filter: CardFilter = {}): Promise<Card[]> {
   const where: Prisma.CardWhereInput = {};
-  if (filter.status && isStatus(filter.status)) where.status = filter.status;
-  if (filter.query) where.player = { contains: filter.query };
+  const status = filter.status?.trim();
+  if (status) {
+    if (!isStatus(status)) throw new CardError(`Onbekende status: ${status}`);
+    where.status = status;
+  }
+  const query = filter.query?.trim();
+  if (query) where.player = { contains: query };
   return prisma.card.findMany({ where, orderBy: { updatedAt: "desc" } });
 }
 
@@ -29,13 +41,21 @@ export function cardDataFromForm(form: FormData): Prisma.CardCreateInput {
   const year = text("year");
   const set = text("set");
   if (!player || !year || !set) {
-    throw new Error("Speler, jaar en set zijn verplicht.");
+    throw new CardError("Speler, jaar en set zijn verplicht.");
   }
 
   const condition = text("condition");
   const status = text("status");
-  if (!isCondition(condition)) throw new Error(`Onbekende conditie: ${condition}`);
-  if (!isStatus(status)) throw new Error(`Onbekende status: ${status}`);
+  if (!isCondition(condition)) throw new CardError(`Onbekende conditie: ${condition}`);
+  if (!isStatus(status)) throw new CardError(`Onbekende status: ${status}`);
+
+  const money = (key: string) => {
+    try {
+      return parseEuro(text(key));
+    } catch (error) {
+      throw new CardError(error instanceof Error ? error.message : `Ongeldig bedrag bij ${key}`);
+    }
+  };
 
   return {
     player,
@@ -46,9 +66,9 @@ export function cardDataFromForm(form: FormData): Prisma.CardCreateInput {
     isRookie: form.get("isRookie") !== null,
     condition,
     status,
-    priceLow: parseEuro(text("priceLow")),
-    priceHigh: parseEuro(text("priceHigh")),
-    askingPrice: parseEuro(text("askingPrice")),
+    priceLow: money("priceLow"),
+    priceHigh: money("priceHigh"),
+    askingPrice: money("askingPrice"),
     listingUrl: optional("listingUrl"),
     notes: optional("notes"),
   };
@@ -58,10 +78,25 @@ export function createCard(data: Prisma.CardCreateInput): Promise<Card> {
   return prisma.card.create({ data });
 }
 
+/**
+ * Prisma gooit P2025 als het record ondertussen weg is (bijv. in een tweede
+ * tab verwijderd); dat wordt hier een nette melding in plaats van een 500.
+ */
+async function requireExisting<T>(action: () => Promise<T>): Promise<T> {
+  try {
+    return await action();
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+      throw new CardError("Deze kaart bestaat niet meer.");
+    }
+    throw error;
+  }
+}
+
 export function updateCard(id: string, data: Prisma.CardUpdateInput): Promise<Card> {
-  return prisma.card.update({ where: { id }, data });
+  return requireExisting(() => prisma.card.update({ where: { id }, data }));
 }
 
 export function deleteCard(id: string): Promise<Card> {
-  return prisma.card.delete({ where: { id } });
+  return requireExisting(() => prisma.card.delete({ where: { id } }));
 }
