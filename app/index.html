@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LoganGroeit">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css">
+<title>LoganGroeit</title>
+</head>
+<body>
+<main>
+  <!-- Hoofdscherm -->
+  <section id="scherm-home" class="scherm actief">
+    <header class="kop">
+      <h1>LoganGroeit</h1>
+      <p class="sub">Hoe leuk vond Logan het?</p>
+    </header>
+    <button id="btn-nieuw" class="knop-primair">＋ Nieuwe wedstrijd</button>
+    <h2 class="sectiekop">Laatste 3</h2>
+    <ul id="lijst-recent" class="lijst"></ul>
+  </section>
+
+  <!-- Rating-scherm -->
+  <section id="scherm-rating" class="scherm">
+    <header class="kop">
+      <h1 id="rating-titel">Nieuwe wedstrijd</h1>
+      <p class="sub">Tik een emoji, tik daarna op opslaan.</p>
+    </header>
+    <form id="form-wedstrijd" novalidate>
+      <label class="veld">
+        <span>Datum</span>
+        <input type="date" id="veld-datum" required>
+      </label>
+      <label class="veld">
+        <span>Tegenstander <em>(optioneel)</em></span>
+        <input type="text" id="veld-tegenstander" maxlength="60" placeholder="bv. SV Meerssen O10-1" autocomplete="off">
+      </label>
+      <div class="veld">
+        <span>Fun-rating</span>
+        <div id="emoji-rij" class="emoji-rij" role="radiogroup" aria-label="Fun-rating van 1 tot 5"></div>
+      </div>
+      <label class="veld">
+        <span>Wat viel op? <em>(optioneel)</em></span>
+        <textarea id="veld-notitie" maxlength="280" rows="3" placeholder="Korte notitie"></textarea>
+      </label>
+      <p id="fout" class="fout" role="alert" hidden></p>
+      <div class="knoppenrij">
+        <button type="button" id="btn-annuleer" class="knop-secundair">Annuleren</button>
+        <button type="submit" id="btn-opslaan" class="knop-primair">Opslaan</button>
+      </div>
+      <button type="button" id="btn-verwijder" class="knop-gevaar" hidden>Verwijderen</button>
+    </form>
+  </section>
+
+  <!-- Tijdlijn -->
+  <section id="scherm-tijdlijn" class="scherm">
+    <header class="kop">
+      <h1>Tijdlijn</h1>
+      <p class="sub" id="tijdlijn-sub"></p>
+    </header>
+    <ul id="lijst-tijdlijn" class="lijst"></ul>
+    <p id="leeg" class="leeg" hidden>Nog geen wedstrijden gelogd.</p>
+  </section>
+</main>
+
+<nav class="tabbar">
+  <button data-tab="home" class="tab actief">🏠<span>Hoofdscherm</span></button>
+  <button data-tab="tijdlijn" class="tab">📈<span>Tijdlijn</span></button>
+</nav>
+
+<div id="toast" class="toast" hidden>✓ Opgeslagen</div>
+
+<script src="store.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
