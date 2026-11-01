@@ -22,14 +22,30 @@ CREATE TABLE IF NOT EXISTS predictions (
   CHECK (created_at < kickoff)
 );
 CREATE TABLE IF NOT EXISTS results (
-  match_id   TEXT PRIMARY KEY REFERENCES predictions(match_id),
+  match_id   TEXT PRIMARY KEY,
   home_goals INT NOT NULL,
   away_goals INT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS odds_closing (
-  match_id  TEXT PRIMARY KEY REFERENCES predictions(match_id),
+  match_id  TEXT PRIMARY KEY,
   odds_home NUMERIC NOT NULL, odds_draw NUMERIC NOT NULL, odds_away NUMERIC NOT NULL,
   source    TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS matches (
+  match_id    TEXT PRIMARY KEY,
+  competition TEXT NOT NULL,
+  season      TEXT NOT NULL,
+  matchday    INT,
+  home        TEXT NOT NULL,
+  away        TEXT NOT NULL,
+  kickoff     TIMESTAMPTZ NOT NULL,
+  status      TEXT NOT NULL,
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS result_corrections (
+  id SERIAL PRIMARY KEY, match_id TEXT NOT NULL,
+  old_home INT NOT NULL, old_away INT NOT NULL, new_home INT NOT NULL, new_away INT NOT NULL,
+  noted_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE TABLE IF NOT EXISTS plans (
   id TEXT PRIMARY KEY, name TEXT NOT NULL, price_cents INT NOT NULL, credits INT NOT NULL
