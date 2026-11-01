@@ -10,7 +10,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "seed": "tsx scripts/seed.ts",
-    "ingest": "tsx scripts/ingest.ts"
+    "ingest": "tsx scripts/ingest.ts",
+    "backtest": "tsx scripts/backtest.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.14",

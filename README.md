@@ -22,6 +22,12 @@ npm test
 - Let op: `results` en `odds_closing` hebben geen FK meer naar `predictions`. Bestaande lokale `.data/pg` verwijderen en opnieuw seeden.
 - Nog niet getest tegen de echte API (geen sleutel in deze omgeving); alleen met opgenomen antwoorden.
 
+## Stap 2 bouwplan (code klaar, echte backtest nog niet gedraaid): model
+- `src/model/dixonColes.ts`: Dixon-Coles met tijdsverval (xi=0.0019/dag), ridge-regularisatie, zonder externe pakketten.
+- `src/model/backtest.ts`: rollend; per week alleen trainen op wedstrijden vóór dat venster. Vergelijkt model, basislijn (H/D/A-frequenties) en slotkoers op dezelfde wedstrijden.
+- `npm run backtest -- E0_2122.csv E0_2223.csv E0_2324.csv` (CSV's van football-data.co.uk, E0 = Premier League; download zelf, de sandbox kon die host niet bereiken).
+- Getest op gesimuleerde data (parameterherstel, rangorde, kansen sommeren tot 1, model < basislijn). Geen uitspraak over echte voorspelkracht tot de backtest op echte data is gedraaid.
+
 ## Nog open
 - Echte voorspelbron en slotkoersen (nu alleen `scripts/seed.ts`).
 - Productie-Postgres en een job die voorspellingen vóór de aftrap wegschrijft.
